@@ -1,3 +1,8 @@
+## 🌐 Live Demo
+
+👉 Check out the live project here:  
+[WOBB AI Website](https://wobbai.netlify.app)
+
 # Wobb Creator Search
 
 A modern web application for searching and managing influencer/creator profiles across Instagram, YouTube, and TikTok platforms.
