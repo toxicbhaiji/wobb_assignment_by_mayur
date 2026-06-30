@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 interface AvatarProps {
   src?: string;
@@ -8,7 +8,7 @@ interface AvatarProps {
 }
 
 function getInitials(name: string): string {
-  const parts = name.split(/\s+/);
+  const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
@@ -24,16 +24,45 @@ function getColorFromString(str: string): string {
   return `hsl(${hue}, 60%, 65%)`;
 }
 
-export function Avatar({ src, alt, size = 56, className = "" }: AvatarProps) {
+export function Avatar({
+  src,
+  alt,
+  size = 56,
+  className = "",
+}: AvatarProps) {
+  const [imageSrc, setImageSrc] = useState(src);
+  const [retry, setRetry] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const handleError = useCallback(() => {
-    setFailed(true);
-  }, []);
+  useEffect(() => {
+    setImageSrc(src);
+    setRetry(false);
+    setFailed(false);
+  }, [src]);
 
-  if (!src || failed) {
+  const handleError = useCallback(() => {
+    if (!retry && src) {
+      setRetry(true);
+      setImageSrc(`${src}${src.includes("?") ? "&" : "?"}retry=${Date.now()}`);
+      return;
+    }
+
+    if (imageSrc && !imageSrc.includes("ui-avatars.com")) {
+      setImageSrc(
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          alt.replace(/'s avatar$/, "")
+        )}&background=random&color=ffffff&size=256`
+      );
+      return;
+    }
+
+    setFailed(true);
+  }, [retry, src, imageSrc, alt]);
+
+  if (!imageSrc || failed) {
     const initials = getInitials(alt.replace(/'s avatar$/, ""));
     const bg = getColorFromString(alt);
+
     return (
       <div
         className={`rounded-full flex items-center justify-center shrink-0 ${className}`}
@@ -55,9 +84,11 @@ export function Avatar({ src, alt, size = 56, className = "" }: AvatarProps) {
 
   return (
     <img
-      src={src}
+      src={imageSrc}
       alt={alt}
       loading="lazy"
+      referrerPolicy="no-referrer"
+      crossOrigin="anonymous"
       onError={handleError}
       className={`rounded-full object-cover shrink-0 ${className}`}
       style={{ width: size, height: size }}
